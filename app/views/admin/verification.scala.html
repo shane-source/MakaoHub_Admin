@@ -1,0 +1,68 @@
+@(csrfToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, item: models.StaffModels.VerificationCase, error: String)
+@roleTitle = @{ item.role().substring(0, 1) + item.role().substring(1).toLowerCase() }
+@staffLayout(roleTitle + " verification review", "verifications", staff, fullName, csrfToken) {
+  <header class="page-heading">
+    <div><h1>@roleTitle verification review</h1><p>@models.StaffModels.shortId(item.userId()) · @item.applicant() · @if(item.reviewer().isBlank) { Staff Lead supervisory review } else { Assigned to @item.reviewer() }</p>@if(item.state() == "PENDING") { <a class="back-link" href="#verification-decision">Approve or reject verification</a> }</div>
+  </header>
+  @if(error != null && !error.isBlank) { <div class="notice danger" role="alert">@error</div> }
+  <div class="notice warning"><strong>Private document viewer · AUDITED</strong><br>Only assigned staff may view evidence. Never copy evidence into messages, reports or public listings.</div>
+
+  <section class="review-grid">
+    <div class="evidence-viewer">
+      @if(item.documents().isEmpty) {
+        <div class="evidence-empty">No current evidence is available for this case.</div>
+      } else {
+        @for(document <- item.documents() if document.id() == item.selectedDocumentId()) {
+          <div class="evidence-meta"><strong>@document.documentType().replace("_", " ")</strong><span>@document.contentType() · @document.size()</span></div>
+          @if(document.contentType() == "application/pdf") {
+            <div class="pdf-evidence"><p>PDF evidence is ready for a permissioned view.</p><a class="primary" href="@routes.AdminController.document(item.role(), item.userId(), document.id())">Open PDF evidence</a></div>
+          } else {
+            <img class="evidence-preview" src="@routes.AdminController.documentFile(item.role(), item.userId(), document.id())" alt="Private @document.documentType().replace("_", " ").toLowerCase() evidence">
+          }
+          <p class="muted">Selected: @document.documentType().replace("_", " ")</p>
+        }
+        <nav class="evidence-tabs" aria-label="Evidence files">
+          @for(document <- item.documents()) {
+            <a class="@if(document.id() == item.selectedDocumentId()){active}" href="@routes.AdminController.verification(item.role(), item.userId())?document=@document.id()">@document.documentType().replace("_", " ")</a>
+          }
+        </nav>
+      }
+    </div>
+
+    <aside class="panel required-evidence">
+      <h2>Required evidence</h2>
+      <a class="back-link" href="@routes.AdminController.verification(item.role(), item.userId())?document=@item.selectedDocumentId()">Refresh review status</a>
+      @for(document <- item.documents()) {
+        <div class="required-row">
+          <span>@document.documentType().replace("_", " ")</span>
+          @if(document.reviewed()) { <strong>Reviewed</strong> } else {
+            <form method="post" action="@document.reviewAction()">
+              <input type="hidden" name="csrfToken" value="@csrfToken">
+              <button type="submit" class="text-button" @if(document.id() != item.selectedDocumentId() || item.state() != "PENDING"){disabled}>Mark reviewed</button>
+            </form>
+          }
+        </div>
+      }
+      @if(item.role() == "LANDLORD") { <p>Check the ownership proof and confirm it belongs to the applicant and property.</p> }
+      @if(item.role() == "SUBLESSOR") { <p>Check the complete signed rental agreement for the shared space.</p> }
+      @if(item.role() == "RENTER") { <p>Identity evidence is never available to landlords or sublessors.</p> }
+      @if(item.role() == "RENTER") { <p><a href="@routes.AdminController.applicationRemarks(item.userId())">View application remarks</a></p> }
+    </aside>
+  </section>
+
+  @if(item.state() == "PENDING") {
+    <form method="post" action="@routes.AdminController.decideVerification(item.role(), item.userId())" class="decision-form" id="verification-decision">
+      <input type="hidden" name="csrfToken" value="@csrfToken">
+      <input type="hidden" name="expectedUpdatedAt" value="@item.updatedAt()">
+      <label class="decision-reason">Decision reason · required for rejection
+        <textarea name="reason" maxlength="500" placeholder="Evidence is clear and consistent, or enter a specific re-upload reason." required></textarea>
+      </label>
+      <div class="split-actions">
+        <button class="primary" name="approve" value="true" type="submit">Approve role verification</button>
+        <button class="text-danger" name="approve" value="false" type="submit">Reject with reason</button>
+      </div>
+    </form>
+  } else {
+    <div class="notice neutral"><strong>Decision recorded</strong><br>@item.state() @if(item.rejectionReason() != "—") { · @item.rejectionReason() }</div>
+  }
+}

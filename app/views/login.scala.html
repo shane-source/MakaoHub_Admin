@@ -1,0 +1,38 @@
+@(csrfToken: String, error: String, success: String)
+@main("Sign in") {
+  <main class="auth-page">
+    <section class="auth-shell" aria-labelledby="sign-in-title">
+      <div class="security-strip">Invite only · Website only<br><small>No public staff registration. An invitation and assigned permission are required.</small></div>
+      <div class="auth-grid">
+        <div class="brand-panel">
+          <p class="brand">makao hub / staff</p>
+          <img src="@routes.Assets.versioned("images/staff-house.jpg")" alt="A warmly lit modern home at sunset">
+          <h2>Careful decisions build a safer housing community.</h2>
+          <p>Private evidence, clear permissions, and an audit record for every action.</p>
+        </div>
+        <div class="form-panel">
+          <h1 id="sign-in-title">Sign in to your workspace</h1>
+          @if(success != null && !success.isBlank) {
+            <div class="notice success" role="status">@success</div>
+          }
+          @if(error != null && !error.isBlank) {
+            <div class="notice danger" role="alert">@error</div>
+          }
+          <form method="post" action="@routes.StaffAuthController.startSignIn()" class="stack-form">
+            <input type="hidden" name="csrfToken" value="@csrfToken">
+            <label>Staff email
+              <input name="email" type="email" maxlength="320" autocomplete="username" placeholder="name@@example.com" required>
+            </label>
+            <label>Password
+              <input name="password" type="password" maxlength="72" autocomplete="current-password" placeholder="Password" required>
+            </label>
+            <button type="submit" class="primary">Sign in and continue to MFA</button>
+          </form>
+          <a class="text-link" href="@routes.StaffAuthController.recover()">Recover staff access</a>
+          <p class="fine-print">Access attempts are audited. Invite-only role assignments are never available in public signup.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+}
+

@@ -1,0 +1,49 @@
+@(csrfToken: String, releaseToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, data: models.StaffModels.PaymentPage, error: String, success: String)
+@staffLayout("Payments, holds and disputes", "payments", staff, fullName, csrfToken) {
+  <header class="page-heading"><div><h1>Payments, holds and disputes</h1><p>Permissioned payment and booking records</p></div></header>
+  @if(error != null && !error.isBlank) { <div class="notice danger" role="alert">@error</div> }
+  @if(success != null && !success.isBlank) { <div class="notice success" role="status">@success</div> }
+  <div class="notice warning"><strong>Paystack TEST mode only</strong><br>The owner reports move-in. A fresh renter True response starts a five-minute wait before an automatic verified TEST transfer. No real money moves.</div>
+  <div class="notice neutral" role="status">False responses require staff review. No response stays held. Live payouts, refunds and overrides are unavailable.</div>
+  <section class="panel table-panel">
+    <h2>Booking release review</h2>
+    <div class="table-scroll"><table><thead><tr><th>Owner / renter</th><th>Move-in</th><th>Amount</th><th>State</th><th>Owner request</th><th>Next step</th></tr></thead><tbody>
+      @for(row <- data.bookings()) { <tr><td>Owner: @row.value("owner")<small>Renter: @row.value("renter")</small><small>@row.value("listing")</small></td><td>Owner report: @row.value("ownerMoveIn")<small>Renter answer: @row.value("accepted")</small></td><td>@row.value("amount")<small>@row.value("payout")</small></td><td>@row.value("status")<small>@row.value("testPayout")</small></td><td>@row.value("requested")</td><td>
+        @if(row.value("accepted") == "false") {
+          <strong>Staff review required. Payment remains held.</strong>
+        } else if(row.value("accepted") != "true") {
+          <small>Waiting for a fresh renter True or False response. No automatic release without True.</small>
+        } else {
+          <small>Automatic TEST payout eligible after @row.value("eligible"); all server and provider checks still apply.</small>
+        }
+        @if(staff.role() == models.StaffModels.StaffRole.STAFF_LEAD && row.value("destination") != "true") {
+          <form method="post" action="@routes.AdminController.configureTestRecipient(row.value("ownerId"))">
+            <input type="hidden" name="csrfToken" value="@csrfToken">
+            <label>Existing Paystack TEST recipient code for @row.value("owner")
+              <input name="recipientCode" required pattern="RCP_[a-zA-Z0-9]+" autocomplete="off" placeholder="RCP_…">
+            </label>
+            <label><input type="checkbox" name="ownerDestinationConfirmed" value="true" required> I checked that this TEST recipient belongs to this owner.</label>
+            <button class="text-button" type="submit">Set up TEST payout destination</button>
+          </form>
+        } else {
+          <small>TEST destination configured: @row.value("destination"). Staff lead handles initial setup; destination changes are blocked.</small>
+        }
+      </td></tr> }
+      @if(data.bookings().isEmpty()) {
+        <tr><td colspan="6">No bookings on this page.</td></tr>
+      }
+    </tbody></table></div>
+  </section>
+  <nav class="pagination" aria-label="Booking pages">
+    @if(data.page() > 0) { <a class="secondary-button" href="@{routes.AdminController.payments().url + "?page=" + (data.page() - 1)}">Previous</a> }
+    <span>Page @(data.page() + 1)</span>
+    @if(data.bookingNext()) { <a class="secondary-button" href="@{routes.AdminController.payments().url + "?page=" + (data.page() + 1)}">Next</a> }
+  </nav>
+  <section class="panel payment-boundary">
+    <h2>Payment records</h2>
+    <div class="table-scroll"><table><thead><tr><th>Reference</th><th>Amount</th><th>State</th><th>Type</th></tr></thead><tbody>
+      @for(row <- data.payments()) { <tr><td>@row.value("reference")</td><td>@row.value("amount")</td><td>@row.value("status")</td><td>@row.value("type")</td></tr> }
+    </tbody></table></div>
+    <p>Live custody, transfer, refund and manual-override controls require approved provider rules and are not available here.</p>
+  </section>
+}

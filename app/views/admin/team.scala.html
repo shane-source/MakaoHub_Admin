@@ -1,0 +1,28 @@
+@(csrfToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, rows: java.util.List[models.StaffModels.TableRow], error: String, success: String)
+@staffLayout("Staff roles and permissions", "team", staff, fullName, csrfToken) {
+  <header class="page-heading"><div><h1>Staff roles and permissions</h1><p>Invite-only access · Least privilege · MFA required</p></div></header>
+  @if(success != null && !success.isBlank) { <div class="notice success" role="status">@success</div> }
+  @if(error != null && !error.isBlank) { <div class="notice danger" role="alert">@error</div> }
+
+  <section class="panel table-panel staff-directory">
+    <div class="table-scroll"><table><thead><tr><th>Staff</th><th>Role</th><th>Scope</th><th>State</th></tr></thead><tbody>
+    @for(row <- rows) {
+      <tr><td>@row.value("name")</td><td>@row.value("role")</td><td>
+        @if(row.value("role") == "VERIFICATION_REVIEWER") { Verification + assigned document views }
+        @if(row.value("role") == "SAFETY_MODERATOR") { Listings, messages and reports }
+        @if(row.value("role") == "PAYMENT_REVIEWER") { Payment and dispute records }
+        @if(row.value("role") == "STAFF_LEAD") { Invite and manage staff permissions }
+      </td><td>@row.value("state") · MFA required</td></tr>
+    }
+    </tbody></table></div>
+  </section>
+
+  <form method="post" action="@routes.AdminController.inviteStaff()" class="invite-form">
+    <input type="hidden" name="csrfToken" value="@csrfToken">
+    <label>Invited staff email<input name="email" type="email" maxlength="320" placeholder="reviewer@@example.com" required></label>
+    <label>Assigned role<select name="role"><option value="VERIFICATION_REVIEWER">Verification reviewer</option><option value="SAFETY_MODERATOR">Safety moderator</option><option value="PAYMENT_REVIEWER">Payment reviewer</option><option value="STAFF_LEAD">Staff lead</option></select></label>
+    <label class="check permission-choice"><input name="documentReview" type="checkbox" value="true"> Private document review permission · assigned cases only</label>
+    <label class="decision-reason">Audit reason<textarea name="reason" maxlength="500" placeholder="Why this staff access is required" required></textarea></label>
+    <div class="split-actions"><button class="primary">Send staff invitation</button><a class="text-button" href="@routes.AdminController.activity()">Review activity history</a></div>
+  </form>
+}

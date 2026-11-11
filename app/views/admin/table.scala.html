@@ -1,0 +1,60 @@
+@(csrfToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, page: models.StaffModels.TablePage, error: String, success: String)
+@staffLayout(page.title(), page.activeSection(), staff, fullName, csrfToken) {
+  <header class="page-heading">
+    <div>
+      <h1>@page.title()</h1>
+      <p>@page.subtitle()</p>
+    </div>
+  </header>
+  @if(success != null && !success.isBlank) { <div class="notice success" role="status">@success</div> }
+  @if(error != null && !error.isBlank) { <div class="notice danger" role="alert">@error</div> }
+  @if(page.activeSection() == "listings") {
+    <nav class="listing-queue-switcher" aria-label="Listing moderation filters">
+      <strong>Landlord</strong>
+      <a href="@{routes.AdminController.listings().url + "?kind=LANDLORD&state=PENDING"}">Pending</a>
+      <a href="@{routes.AdminController.listings().url + "?kind=LANDLORD&state=APPROVED"}">Approved</a>
+      <a href="@{routes.AdminController.listings().url + "?kind=LANDLORD&state=REJECTED"}">Rejected</a>
+      <strong>Sublessor</strong>
+      <a href="@{routes.AdminController.listings().url + "?kind=SUBLESSOR&state=PENDING"}">Pending</a>
+      <a href="@{routes.AdminController.listings().url + "?kind=SUBLESSOR&state=APPROVED"}">Approved</a>
+      <a href="@{routes.AdminController.listings().url + "?kind=SUBLESSOR&state=REJECTED"}">Rejected</a>
+    </nav>
+  }
+  <section class="panel table-panel">
+    @if(page.rows().isEmpty) {
+      <div class="empty-state"><h2>No records in this view</h2><p>Change the filters or check again later.</p></div>
+    } else {
+      <div class="table-scroll">
+        <table>
+          <thead><tr>@for(column <- page.columns()) { <th scope="col">@column.label()</th> }<th scope="col"><span class="sr-only">Action</span></th></tr></thead>
+          <tbody>
+          @for(row <- page.rows()) {
+            <tr>
+              @for(column <- page.columns()) { <td data-label="@column.label()">@row.value(column.key())</td> }
+              <td class="row-action">@if(row.href() != null && !row.href().isBlank) { <a href="@row.href()">@row.actionLabel()</a> }</td>
+            </tr>
+          }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+  @if(page.activeSection() == "audit") {
+    <section class="panel audit-export">
+      <h2>Export permitted audit records</h2>
+      <form method="post" action="@routes.AdminController.exportAudit()" class="form-grid compact-grid">
+        <input type="hidden" name="csrfToken" value="@csrfToken">
+        <label>Actor reference (optional)<input name="actor" maxlength="36"></label>
+        <label>Subject reference (optional)<input name="subject" maxlength="36"></label>
+        <label>Audit reason<input name="reason" maxlength="500" required></label>
+        <button class="secondary-button">Export current audit page</button>
+      </form>
+    </section>
+  }
+  <nav class="pagination" aria-label="Pagination">
+    @if(page.previousHref() != null) { <a class="secondary-button" href="@page.previousHref()">Previous</a> }
+    <span>Page @(page.page() + 1)</span>
+    @if(page.hasNext() && page.nextHref() != null) { <a class="secondary-button" href="@page.nextHref()">Next</a> }
+  </nav>
+}
+

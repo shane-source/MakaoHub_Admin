@@ -1,0 +1,48 @@
+@(title: String, active: String, staff: models.StaffModels.StaffIdentity, fullName: String, csrfToken: String)(content: Html)
+@main(title) {
+  <div class="workspace">
+    <header class="workspace-topbar">
+      <span>Invite-only · Website only</span><b>/</b><span>Staff workspace · private and audited</span>
+    </header>
+    <aside class="sidebar" aria-label="Staff navigation">
+      <a class="staff-brand" href="@routes.AdminController.workspace()">makao hub</a>
+      <p class="staff-restriction"><b>●</b> STAFF · RESTRICTED</p>
+      <nav>
+        @if(staff.role().canSee("verifications")) {
+          <a class="@if(active == "verifications"){active}" href="@routes.AdminController.verifications()">Verification queue</a>
+        } else { <span class="nav-unavailable" aria-disabled="true">Verification queue</span> }
+        @if(staff.role().canSee("listings")) {
+          <a class="@if(active == "listings"){active}" href="@routes.AdminController.listings()">Listing moderation</a>
+        } else { <span class="nav-unavailable" aria-disabled="true">Listing moderation</span> }
+        @if(staff.role().canSee("flags")) {
+          <a class="@if(active == "flags"){active}" href="@routes.AdminController.flaggedMessages()">Flagged messages</a>
+        } else { <span class="nav-unavailable" aria-disabled="true">Flagged messages</span> }
+        @if(staff.role().canSee("reports")) {
+          <a class="@if(active == "reports"){active}" href="@routes.AdminController.reports()">User reports</a>
+        } else { <span class="nav-unavailable" aria-disabled="true">User reports</span> }
+        @if(staff.role().canSee("payments")) {
+          <a class="@if(active == "payments"){active}" href="@routes.AdminController.payments()">Payments &amp; disputes</a>
+        } else { <span class="nav-unavailable" aria-disabled="true">Payments &amp; disputes</span> }
+        @if(staff.role().canSee("audit")) {
+          <a class="@if(active == "audit"){active}" href="@routes.AdminController.audit()">Audit log</a>
+        } else { <span class="nav-unavailable" aria-disabled="true">Audit log</span> }
+        @if(staff.role().canSee("team")) {
+          <a class="@if(active == "team"){active}" href="@routes.AdminController.staff()">Staff &amp; permissions</a>
+        } else { <span class="nav-unavailable" aria-disabled="true">Staff &amp; permissions</span> }
+        <a class="@if(active == "activity"){active}" href="@routes.AdminController.activity()">Activity history</a>
+      </nav>
+      <div class="identity-chip">
+        <strong>@fullName</strong>
+        <span>@staff.role().label() · MFA verified</span>
+      </div>
+      <form method="post" action="@routes.StaffAuthController.signOut()" class="sign-out-form">
+        <input type="hidden" name="csrfToken" value="@csrfToken">
+        <button type="submit" class="text-button">Sign out</button>
+      </form>
+    </aside>
+    <main class="workspace-main">
+      @content
+    </main>
+  </div>
+}
+

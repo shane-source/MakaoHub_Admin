@@ -1,0 +1,34 @@
+@(csrfToken: String, error: String)
+@main("Accept staff invitation") {
+  <main class="auth-page compact-auth">
+    <section class="auth-shell narrow" aria-labelledby="invite-title">
+      <div class="security-strip">Invite only · Dedicated staff account</div>
+      <div class="form-panel single-panel">
+        <p class="brand">makao hub / staff</p>
+        <h1 id="invite-title">Accept your staff invitation</h1>
+        <p>Use the email and one-time invitation code sent by Makao Hub.</p>
+        @if(error != null && !error.isBlank) {
+          <div class="notice danger" role="alert">@error</div>
+        }
+        <form method="post" action="@routes.StaffAuthController.completeInvitation()" class="stack-form">
+          <input type="hidden" name="csrfToken" value="@csrfToken">
+          <label>Staff email
+            <input name="email" type="email" maxlength="320" autocomplete="username" required>
+          </label>
+          <label>Invitation code
+            <input name="invitationCode" maxlength="100" autocomplete="one-time-code" required>
+          </label>
+          <label>Full name
+            <input name="fullName" maxlength="150" autocomplete="name" required>
+          </label>
+          <label>Dedicated staff password
+            <input name="password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required>
+          </label>
+          <button type="submit" class="primary">Create staff account</button>
+        </form>
+        <p class="fine-print">Accepting an invitation does not sign you in. Every sign-in still requires email MFA.</p>
+      </div>
+    </section>
+  </main>
+}
+

@@ -1,0 +1,20 @@
+@(contentType: String, fileHref: String, reviewHref: String)
+@main("Private evidence") {
+  <main class="private-document">
+    <header class="page-heading">
+      <div><a class="back-link" href="@reviewHref">← Back to review</a><h1>Private evidence</h1></div>
+    </header>
+    <p>Inspect the file, then return to the review. Opening it does not mark it reviewed.</p>
+    @if(contentType == "application/pdf") {
+      <section class="panel">
+        <p>This document is a PDF.</p>
+        <a class="secondary-button" href="@fileHref">Open PDF</a>
+        <p class="muted">Document viewing is audited. Downloads are disabled in this workspace.</p>
+      </section>
+    } else {
+      <img class="private-evidence-image" src="@fileHref" alt="Private verification evidence">
+      <p>If the preview does not load, <a href="@fileHref">open the file directly</a> to see the result.</p>
+    }
+    <p><a class="back-link" href="@reviewHref">← Back to review</a></p>
+  </main>
+}

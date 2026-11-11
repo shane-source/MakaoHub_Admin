@@ -1,0 +1,53 @@
+@(csrfToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, queue: models.StaffModels.ActionQueue, error: String, success: String)
+@staffLayout(queue.title(), queue.activeSection(), staff, fullName, csrfToken) {
+  <header class="page-heading"><div><h1>@queue.title()</h1><p>@queue.subtitle()</p></div></header>
+  @if(success != null && !success.isBlank) { <div class="notice success" role="status">@success</div> }
+  @if(error != null && !error.isBlank) { <div class="notice danger" role="alert">@error</div> }
+
+  <section class="panel table-panel">
+    @if(queue.items().isEmpty) {
+      <div class="empty-state"><h2>No records in this view</h2><p>There is nothing waiting for this queue.</p></div>
+    } else {
+      <div class="table-scroll"><table>
+      @if(queue.activeSection() == "flags") {
+        <thead><tr><th>Thread</th><th>Role pair</th><th>Masked content</th><th>Flag</th><th>Received</th></tr></thead>
+        <tbody>@for(item <- queue.items()) {<tr><td>@item.value("Message reference")</td><td>@item.value("Role pair")</td><td>@item.value("Masked content")</td><td>@item.value("Flag reason")</td><td>@item.value("Created")</td></tr>}</tbody>
+      } else {
+        <thead><tr><th>Report</th><th>Subject</th><th>Concern</th><th>Priority</th><th>State</th></tr></thead>
+        <tbody>@for(item <- queue.items()) {<tr><td>@item.value("Report reference")</td><td>@item.value("Subject")</td><td>@item.value("Concern")</td><td>@item.value("Priority")</td><td>@item.value("State")</td></tr>}</tbody>
+      }
+      </table></div>
+    }
+  </section>
+
+  @if(!queue.items().isEmpty) {
+    @defining(queue.items().get(0)) { selected =>
+      @if(queue.activeSection() == "flags") {
+        <div class="notice neutral"><strong>Keep communication inside Makao Hub</strong><br>Contact details stay masked. Review only the minimum context needed for a safety decision.</div>
+        @if(staff.role() == models.StaffModels.StaffRole.SAFETY_MODERATOR) {
+          <form method="post" action="@selected.actionPath()" class="decision-form">
+            <input type="hidden" name="csrfToken" value="@csrfToken">
+            <label class="decision-reason">Action reason<textarea name="reason" maxlength="500" placeholder="Describe the confirmed contact-sharing attempt without copying private contact data." required></textarea></label>
+            <div class="split-actions"><button class="primary" name="escalate" value="false">Confirm flag and warn user</button><button class="text-danger" name="escalate" value="true">Escalate safety review</button></div>
+          </form>
+        }
+      } else {
+        <section class="panel selected-report">
+          <h2>Selected report</h2>
+          <p>@selected.value("Private summary")</p>
+          @if(staff.role() == models.StaffModels.StaffRole.SAFETY_MODERATOR) {
+            <form method="post" action="@selected.actionPath()" class="decision-form">
+              <input type="hidden" name="csrfToken" value="@csrfToken">
+              <input type="hidden" name="priority" value="@selected.value("Priority")">
+              @if(selected.kind() == "LANDLORD_LISTING" || selected.kind() == "SHARED_LISTING") { <label class="check"><input type="checkbox" name="pauseListing" value="true"> Pause the reported listing</label> }
+              <label class="decision-reason">Resolution reason<textarea name="reason" maxlength="500" placeholder="Record the evidence-based outcome without private identity or contact data." required></textarea></label>
+              <label class="check permission-choice"><input type="checkbox" name="notifyUsers" value="true"> Notify affected users with a safe summary</label>
+              <div class="split-actions"><button class="primary" name="state" value="RESOLVED">Resolve selected report</button><button class="text-danger" name="state" value="ESCALATED">Escalate case</button></div>
+            </form>
+          }
+        </section>
+      }
+    }
+  }
+  <nav class="pagination" aria-label="Pagination">@if(queue.previousHref() != null) { <a class="secondary-button" href="@queue.previousHref()">Previous</a> }<span>Page @(queue.page() + 1)</span>@if(queue.hasNext() && queue.nextHref() != null) { <a class="secondary-button" href="@queue.nextHref()">Next</a> }</nav>
+}

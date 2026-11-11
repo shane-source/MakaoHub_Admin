@@ -1,0 +1,40 @@
+@(csrfToken: String, email: String, codeSent: Boolean, error: String)
+@main("Recover staff access") {
+  <main class="auth-page compact-auth">
+    <section class="auth-shell narrow" aria-labelledby="recover-title">
+      <div class="security-strip">Invite only · Staff recovery</div>
+      <div class="form-panel single-panel">
+        <p class="brand">makao hub / staff</p>
+        <h1 id="recover-title">Recover staff access</h1>
+        @if(error != null && !error.isBlank) {
+          <div class="notice danger" role="alert">@error</div>
+        }
+        @if(!codeSent) {
+          <p>If the account exists, Makao Hub will email a one-time reset code.</p>
+          <form method="post" action="@routes.StaffAuthController.requestRecovery()" class="stack-form">
+            <input type="hidden" name="csrfToken" value="@csrfToken">
+            <label>Staff email
+              <input name="email" type="email" maxlength="320" autocomplete="username" required>
+            </label>
+            <button type="submit" class="primary">Send recovery code</button>
+          </form>
+        } else {
+          <div class="notice neutral" role="status">If the staff account exists, a reset code has been sent.</div>
+          <form method="post" action="@routes.StaffAuthController.resetPassword()" class="stack-form">
+            <input type="hidden" name="csrfToken" value="@csrfToken">
+            <input type="hidden" name="email" value="@email">
+            <label>Six-digit code
+              <input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
+            </label>
+            <label>New password
+              <input name="password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required>
+            </label>
+            <button type="submit" class="primary">Reset password</button>
+          </form>
+        }
+        <a class="text-link" href="@routes.StaffAuthController.signIn()">Return to sign in</a>
+      </div>
+    </section>
+  </main>
+}
+

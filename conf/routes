@@ -1,0 +1,48 @@
+GET     /                                      controllers.StaffAuthController.home(request: Request)
+
+GET     /staff/sign-in                        controllers.StaffAuthController.signIn(request: Request)
+POST    /staff/sign-in                        controllers.StaffAuthController.startSignIn(request: Request)
+GET     /staff/verify                         controllers.StaffAuthController.verify(request: Request)
+POST    /staff/verify                         controllers.StaffAuthController.completeSignIn(request: Request)
+POST    /staff/sign-out                       controllers.StaffAuthController.signOut(request: Request)
+
+GET     /staff/recover                        controllers.StaffAuthController.recover(request: Request)
+POST    /staff/recover                        controllers.StaffAuthController.requestRecovery(request: Request)
+POST    /staff/reset-password                 controllers.StaffAuthController.resetPassword(request: Request)
+GET     /staff/accept-invitation              controllers.StaffAuthController.acceptInvitation(request: Request)
+POST    /staff/accept-invitation              controllers.StaffAuthController.completeInvitation(request: Request)
+
+GET     /staff                                controllers.AdminController.workspace(request: Request)
+GET     /staff/verifications                  controllers.AdminController.verifications(request: Request)
+POST    /staff/verifications/:role/:userId/assign controllers.AdminController.assignVerification(request: Request, role: String, userId: String)
+GET     /staff/verifications/:role/:userId    controllers.AdminController.verification(request: Request, role: String, userId: String)
+GET     /staff/renter-application-remarks/:userId controllers.AdminController.applicationRemarks(request: Request, userId: String)
+GET     /staff/verifications/:role/:userId/documents/:documentId controllers.AdminController.document(request: Request, role: String, userId: String, documentId: String)
+# Keep the controller's stricter raw-file CSP instead of replacing it with the HTML policy.
++ nocsp
+GET     /staff/verifications/:role/:userId/documents/:documentId/file controllers.AdminController.documentFile(request: Request, role: String, userId: String, documentId: String)
+POST    /staff/verifications/:role/:userId/documents/:documentId/review controllers.AdminController.reviewDocument(request: Request, role: String, userId: String, documentId: String)
+POST    /staff/verifications/:role/:userId/decision controllers.AdminController.decideVerification(request: Request, role: String, userId: String)
+
+GET     /staff/listings                       controllers.AdminController.listings(request: Request)
+GET     /staff/listings/:kind/:listingId      controllers.AdminController.listing(request: Request, kind: String, listingId: String)
+GET     /staff/listings/:kind/:listingId/media/:mediaId controllers.AdminController.listingMedia(request: Request, kind: String, listingId: String, mediaId: String)
+POST    /staff/listings/:kind/:listingId/decision controllers.AdminController.decideListing(request: Request, kind: String, listingId: String)
+
+GET     /staff/flagged-messages               controllers.AdminController.flaggedMessages(request: Request)
+POST    /staff/flagged-messages/:kind/:messageId/decision controllers.AdminController.decideFlag(request: Request, kind: String, messageId: String)
+GET     /staff/reports                        controllers.AdminController.reports(request: Request)
+POST    /staff/reports/:reportId/decision     controllers.AdminController.decideReport(request: Request, reportId: String)
+
+GET     /staff/payments                       controllers.AdminController.payments(request: Request)
+POST    /staff/payments/bookings/:bookingId/release controllers.AdminController.releaseTestBooking(request: Request, bookingId: String)
+POST    /staff/payments/owners/:ownerId/test-recipient controllers.AdminController.configureTestRecipient(request: Request, ownerId: String)
+GET     /staff/audit                          controllers.AdminController.audit(request: Request)
+POST    /staff/audit/export                   controllers.AdminController.exportAudit(request: Request)
+GET     /staff/team                           controllers.AdminController.staff(request: Request)
+POST    /staff/team/invitations               controllers.AdminController.inviteStaff(request: Request)
+POST    /staff/team/:staffId/permissions      controllers.AdminController.changeStaff(request: Request, staffId: String)
+GET     /staff/activity                       controllers.AdminController.activity(request: Request)
+
+GET     /assets/*file                         controllers.Assets.versioned(path="/public", file: Asset)
+
