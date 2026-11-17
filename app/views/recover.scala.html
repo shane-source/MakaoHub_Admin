@@ -1,0 +1,47 @@
+@(csrfToken: String, email: String, codeSent: Boolean, error: String)
+@main("Recover staff access") {
+  <main class="login-split">
+    <section class="login-art" aria-hidden="true">
+      <img src="@routes.Assets.versioned("images/staff-house.jpg")" alt="">
+      <div class="login-art-overlay"></div>
+      <div class="login-art-copy">
+        <span class="login-mark">&#9650;</span>
+        <p class="login-brand">Makao Hub</p>
+        <h2>Back in, safely.</h2>
+      </div>
+    </section>
+    <section class="login-panel" aria-labelledby="page-title">
+      <div class="login-card">
+        <span class="login-mark small">&#9650;</span>
+        <h1 id="page-title">Recover access</h1>
+        @if(error != null && !error.isBlank) {
+          <div class="notice danger" role="alert">@error</div>
+        }
+        @if(!codeSent) {
+          <p class="login-sub">We&rsquo;ll email you a one-time code.</p>
+          <form method="post" action="@routes.StaffAuthController.requestRecovery()" class="login-form">
+            <input type="hidden" name="csrfToken" value="@csrfToken">
+            <label>Email
+              <input name="email" type="email" maxlength="320" autocomplete="username" placeholder="name@@example.com" required autofocus>
+            </label>
+            <button type="submit" class="login-button">Send code</button>
+          </form>
+        } else {
+          <div class="notice neutral" role="status">If the staff account exists, a reset code has been sent.</div>
+          <form method="post" action="@routes.StaffAuthController.resetPassword()" class="login-form">
+            <input type="hidden" name="csrfToken" value="@csrfToken">
+            <input type="hidden" name="email" value="@email">
+            <label>6-digit code
+              <input name="code" class="otp-box" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" required autofocus>
+            </label>
+            <label>New password
+              <input name="password" type="password" minlength="8" maxlength="72" autocomplete="new-password" placeholder="At least 8 characters" required>
+            </label>
+            <button type="submit" class="login-button">Reset password</button>
+          </form>
+        }
+        <a class="login-forgot" href="@routes.StaffAuthController.signIn()">&larr; Back to sign in</a>
+      </div>
+    </section>
+  </main>
+}

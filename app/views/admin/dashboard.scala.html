@@ -1,0 +1,17 @@
+@(csrfToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, cards: List[Array[String]], error: String, success: String)
+@staffLayout("Dashboard", "dashboard", staff, fullName, csrfToken) {
+  <header class="page-heading">
+    <div><h1>Dashboard</h1><p>What needs staff attention right now. Counts show up to 50 items per queue.</p></div>
+  </header>
+  @if(success != null && !success.isBlank) { <div class="notice success" role="status">@success</div> }
+  @if(error != null && !error.isBlank) { <div class="notice danger" role="alert">@error</div> }
+  <section class="queue-summary dashboard-cards" aria-label="Work waiting">
+    @for(card <- cards) {
+      <a class="dash-card" href="@card(2)">
+        <span>@card(0).toUpperCase</span><strong>@card(1)</strong><small>@card(3)</small>
+      </a>
+    }
+    @if(cards.isEmpty) { <article><span>WORKSPACE</span><strong>Ready</strong><small>Open Activity history from the sidebar.</small></article> }
+  </section>
+  <div class="notice neutral"><strong>Signed in as @staff.role().label()</strong><br>Only the queues your role may open are shown. Every decision you make is recorded in the audit log.</div>
+}

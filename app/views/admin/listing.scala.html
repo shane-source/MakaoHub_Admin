@@ -1,0 +1,57 @@
+@(csrfToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, item: models.StaffModels.ListingCase, error: String)
+@staffLayout("Listing moderation", "listings", staff, fullName, csrfToken) {
+  <header class="page-heading"><div><h1>Listing moderation</h1><p>Whole homes and shared spaces · Review media, claims and private-location completeness</p></div></header>
+  @if(error != null && !error.isBlank) { <div class="notice danger" role="alert">@error</div> }
+
+  <section class="listing-review">
+    <div class="listing-visual">
+      @if(item.media().isEmpty) { <div class="image-placeholder">No confirmed listing photo</div> } else {
+        <div class="listing-media-gallery" aria-label="Submitted listing media">
+          @for(media <- item.media()) {
+            @if(media.mediaType() == "IMAGE") {
+              <figure class="listing-media-item">
+                <img src="@media.viewHref()" alt="Submitted listing photo for @item.title()">
+                <figcaption>Listing photo</figcaption>
+              </figure>
+            }
+            @if(media.mediaType() == "VIDEO") {
+              <figure class="listing-media-item listing-video">
+                <video controls preload="metadata" aria-label="Submitted video walkthrough for @item.title()">
+                  <source src="@media.viewHref()" type="@media.contentType()">
+                  Your browser cannot play this submitted video.
+                </video>
+                <figcaption>Video walkthrough</figcaption>
+              </figure>
+            }
+          }
+        </div>
+      }
+      <p class="verified-owner">● @if(item.ownerVerified()) { Verified @item.kind().toLowerCase() } else { Owner verification unavailable }</p>
+    </div>
+    <div class="panel listing-facts">
+      <h2>@item.title()</h2>
+      <dl class="stacked-facts">
+        <dt>Listing type</dt><dd>@item.listingType() · @item.bedrooms() · @item.rent()</dd>
+        <dt>Public area</dt><dd>@item.publicArea() · No exact pin in public view</dd>
+        <dt>Required media</dt><dd>@item.imageCount() photos · @if(item.videoUploaded()) { Video uploaded } else { No video uploaded }</dd>
+        <dt>Private location check</dt><dd>@if(item.locationSaved()) { Exact pin saved · Restricted access } else { Exact pin missing }</dd>
+      </dl>
+    </div>
+  </section>
+
+  @if((staff.role() == models.StaffModels.StaffRole.STAFF_LEAD || staff.role() == models.StaffModels.StaffRole.SAFETY_MODERATOR) && item.moderationState() == "PENDING") {
+    <form method="post" action="@routes.AdminController.decideListing(item.kind(), item.id())" class="decision-form">
+      <input type="hidden" name="csrfToken" value="@csrfToken">
+      <input type="hidden" name="expectedUpdatedAt" value="@item.updatedAt()">
+      <label class="decision-reason">Moderation reason
+        <textarea name="reason" maxlength="500" placeholder="Approved, or specify which media or claim needs correction." required></textarea>
+      </label>
+      <div class="split-actions">
+        <button class="primary" name="approve" value="true" type="submit">Approve listing for publication</button>
+        <button class="text-danger" name="approve" value="false" type="submit">Reject and request changes</button>
+      </div>
+    </form>
+  } else {
+    <div class="notice neutral"><strong>@item.moderationState()</strong><br>@item.moderationReason()</div>
+  }
+}

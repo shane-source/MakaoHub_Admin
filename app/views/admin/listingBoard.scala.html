@@ -1,0 +1,88 @@
+@(csrfToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, board: models.BoardModels.Board, error: String, success: String)
+@staffLayout("Listing moderation", "listings", staff, fullName, csrfToken) {
+  <header class="lm-hero">
+    <div><span class="lm-kicker">Moderation queue</span><h1>Listing Moderation</h1><p>Approve or remove homes before renters see them.</p></div>
+    <div class="lm-count"><strong>@board.total()</strong><span>@board.state().toLowerCase @board.kind().toLowerCase listing@if(board.total() != 1){s}</span></div>
+  </header>
+  @if(success != null && !success.isBlank) { <div class="notice success" role="status">@success</div> }
+  @if(error != null && !error.isBlank) { <div class="notice danger" role="alert">@error</div> }
+
+  <nav class="lm-switcher" aria-label="Listing moderation filters">
+    <div class="lm-group"><span class="lm-group-name">Landlord</span><a class="@if(board.kind() == "LANDLORD" && board.state() == "PENDING"){active}" href="@{routes.AdminController.listings().url + "?kind=LANDLORD&state=PENDING"}">Pending</a><a class="@if(board.kind() == "LANDLORD" && board.state() == "APPROVED"){active}" href="@{routes.AdminController.listings().url + "?kind=LANDLORD&state=APPROVED"}">Approved</a><a class="@if(board.kind() == "LANDLORD" && board.state() == "REJECTED"){active}" href="@{routes.AdminController.listings().url + "?kind=LANDLORD&state=REJECTED"}">Rejected</a></div>
+    <div class="lm-group"><span class="lm-group-name">Sublessor</span><a class="@if(board.kind() == "SUBLESSOR" && board.state() == "PENDING"){active}" href="@{routes.AdminController.listings().url + "?kind=SUBLESSOR&state=PENDING"}">Pending</a><a class="@if(board.kind() == "SUBLESSOR" && board.state() == "APPROVED"){active}" href="@{routes.AdminController.listings().url + "?kind=SUBLESSOR&state=APPROVED"}">Approved</a><a class="@if(board.kind() == "SUBLESSOR" && board.state() == "REJECTED"){active}" href="@{routes.AdminController.listings().url + "?kind=SUBLESSOR&state=REJECTED"}">Rejected</a></div>
+  </nav>
+
+  <div class="board @if(board.panel() != null){has-panel}">
+    <section class="board-list" aria-label="Listings for moderation">
+      <div class="list-head">
+        <h2>Listings</h2>
+        <span class="sort-by">Sort
+          <a class="@if(board.sort() == ""){active}" href="@{routes.AdminController.listings().url + "?kind=" + board.kind() + "&state=" + board.state()}">Oldest first</a>
+          <a class="@if(board.sort() == "reports"){active}" href="@{routes.AdminController.listings().url + "?kind=" + board.kind() + "&state=" + board.state() + "&sort=reports"}">Most reports</a>
+        </span>
+      </div>
+      @if(board.cards().isEmpty) {
+        <div class="lm-empty"><div class="lm-empty-icon" aria-hidden="true">&#8962;</div><h2>All caught up</h2><p>Nothing here right now.</p></div>
+      }
+      @for(card <- board.cards()) {
+        <article class="listing-queue-card @if(board.panel() != null && board.panel().item().id() == card.id()){selected}">
+          @if(card.thumbHref() != null) { <img class="listing-thumb" src="@card.thumbHref()" alt="" loading="lazy"> } else { <div class="listing-card-icon" aria-hidden="true">⌂</div> }
+          <div class="listing-card-copy">
+            <div class="card-top"><span class="status-pill pill-@card.moderation().toLowerCase">@card.moderation()</span>@if(card.reports() > 0) { <span class="report-count">@card.reports() @if(card.reports() == 1){Report}else{Reports}</span> }</div>
+            <h2>@card.title()</h2>
+            <p>Owner: @card.owner() · @card.rent()</p>
+            <p>Submitted @card.submitted()</p>
+            <a class="view-link" href="@card.selectHref()">Viewing Details →</a>
+            <a class="inspect-link" href="@card.inspectHref()">Inspect</a>
+          </div>
+        </article>
+      }
+      <nav class="pagination" aria-label="Pagination">
+        <span class="count-note">@board.total() listing@if(board.total() != 1){s}</span>
+        @if(board.previousHref() != null) { <a class="secondary-button" href="@board.previousHref()" aria-label="Previous page">‹</a> }
+        @for(link <- board.links()) { <a class="page-number @if(link.current()){current}" href="@link.href()">@link.label()</a> }
+        @if(board.hasNext() && board.nextHref() != null) { <a class="secondary-button" href="@board.nextHref()" aria-label="Next page">›</a> }
+      </nav>
+    </section>
+
+    @if(board.panel() != null) {
+      @defining(board.panel().item()) { item =>
+      <aside class="board-panel" aria-label="Listing under review">
+        <div class="panel-top"><span class="panel-label">LISTING UNDER REVIEW</span><a class="panel-close" href="@board.panel().closeHref()" aria-label="Close panel">✕</a></div>
+        <h2>@item.title()</h2>
+        @if(item.media().isEmpty) { <div class="image-placeholder">No confirmed listing photo or video</div> } else {
+          <div class="panel-gallery" aria-label="All submitted listing media">
+            @for(media <- item.media()) {
+              @if(media.mediaType() == "IMAGE") {
+                <a href="@media.viewHref()" target="_blank" rel="noopener"><img src="@media.viewHref()" alt="Submitted listing photo for @item.title()" loading="lazy"></a>
+              }
+              @if(media.mediaType() == "VIDEO") {
+                <video controls preload="metadata" aria-label="Submitted video for @item.title()"><source src="@media.viewHref()" type="@media.contentType()">Your browser cannot play this video.</video>
+              }
+            }
+          </div>
+        }
+        <p class="panel-facts">@item.listingType() · @item.bedrooms() · @item.rent()<br>@item.publicArea() · @item.imageCount() photos@if(item.videoUploaded()) { · video }</p>
+        <h3>Report history</h3>
+        @if(board.panel().reports().isEmpty) { <p class="muted">No user reports on this listing.</p> }
+        @for(report <- board.panel().reports()) {
+          <div class="report-entry"><strong>@report.category()</strong><p>@report.description()</p><small>@report.created() · @report.state()</small></div>
+        }
+        <div class="owner-row"><span class="owner-avatar">@item.ownerName().take(1)</span><div><strong>@item.ownerName()</strong><small>@if(item.ownerVerified()) { Verified @item.kind().toLowerCase } else { Owner verification unavailable }</small></div></div>
+        @if((staff.role() == models.StaffModels.StaffRole.STAFF_LEAD || staff.role() == models.StaffModels.StaffRole.SAFETY_MODERATOR) && item.moderationState() == "PENDING") {
+          <form method="post" action="@routes.AdminController.decideListing(item.kind(), item.id())" class="decision-form panel-form">
+            <input type="hidden" name="csrfToken" value="@csrfToken">
+            <input type="hidden" name="expectedUpdatedAt" value="@item.updatedAt()">
+            <label class="decision-reason">Moderation reason<textarea name="reason" maxlength="500" placeholder="Approved, or say which media or claim needs correction." required></textarea></label>
+            <button class="approve-button" name="approve" value="true" type="submit">Keep &amp; Approve Listing</button>
+            <button class="remove-button" name="approve" value="false" type="submit">Remove Listing</button>
+            <small class="panel-note">Removing sends the owner a request to correct the listing. Approving publishes it when their plan has a free slot.</small>
+          </form>
+        } else {
+          <div class="notice neutral"><strong>@item.moderationState()</strong><br>@item.moderationReason()</div>
+        }
+      </aside>
+      }
+    }
+  </div>
+}

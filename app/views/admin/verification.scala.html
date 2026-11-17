@@ -1,0 +1,82 @@
+@(csrfToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, item: models.StaffModels.VerificationCase, error: String)
+@roleTitle = @{ item.role().substring(0, 1) + item.role().substring(1).toLowerCase() }
+@staffLayout(roleTitle + " verification review", "verifications", staff, fullName, csrfToken) {
+  <header class="vr-hero">
+    <div class="vr-avatar" aria-hidden="true">@item.applicant().substring(0, 1).toUpperCase</div>
+    <div class="vr-hero-copy">
+      <span class="vr-kicker">@roleTitle verification</span>
+      <h1>@item.applicant()</h1>
+      <p>@if(item.reviewer().isBlank) { Staff Lead review } else { Assigned to @item.reviewer() }</p>
+    </div>
+    <span class="vr-state vr-state-@item.state().toLowerCase">@item.state()</span>
+    @if(item.state() == "PENDING") { <a class="vr-jump" href="#verification-decision">Decide &darr;</a> }
+  </header>
+  @if(error != null && !error.isBlank) { <div class="notice danger" role="alert">@error</div> }
+  <p class="vr-audit"><span aria-hidden="true">&#128274;</span> Private documents &middot; every view is audited</p>
+
+  <section class="vr-grid">
+    <div class="vr-viewer">
+      @if(item.documents().isEmpty) {
+        <div class="evidence-empty">No evidence uploaded yet.</div>
+      } else {
+        @for(document <- item.documents() if document.id() == item.selectedDocumentId()) {
+          <div class="vr-viewer-bar"><strong>@document.documentType().replace("_", " ")</strong><span>@document.size()</span></div>
+          <div class="vr-stage">
+          @if(document.contentType() == "application/pdf") {
+            <div class="pdf-evidence"><p>PDF document</p><a class="primary" href="@routes.AdminController.document(item.role(), item.userId(), document.id())">Open PDF</a></div>
+          } else {
+            <a href="@routes.AdminController.documentFile(item.role(), item.userId(), document.id())" target="_blank" rel="noopener"><img class="vr-image" src="@routes.AdminController.documentFile(item.role(), item.userId(), document.id())" alt="@document.documentType().replace("_", " ").toLowerCase()"></a>
+          }
+          </div>
+        }
+        <div class="vr-thumbs">
+          @for(document <- item.documents()) {
+            <a class="vr-thumb @if(document.id() == item.selectedDocumentId()){active}" href="@routes.AdminController.verification(item.role(), item.userId())?document=@document.id()">
+              @if(document.contentType() == "application/pdf") {
+                <span class="vr-thumb-pdf">PDF</span>
+              } else {
+                <img src="@routes.AdminController.documentFile(item.role(), item.userId(), document.id())" alt="" loading="lazy">
+              }
+              <span class="vr-thumb-name">@document.documentType().replace("_", " ")@if(document.reviewed()) { <b>&#10003;</b> }</span>
+            </a>
+          }
+        </div>
+      }
+    </div>
+
+    <aside class="vr-checklist">
+      <h2>Checklist</h2>
+      @for(document <- item.documents()) {
+        <div class="vr-check @if(document.reviewed()){done}">
+          <span class="vr-tick" aria-hidden="true">@if(document.reviewed()) {&#10003;}</span>
+          <span class="vr-check-name">@document.documentType().replace("_", " ")</span>
+          @if(!document.reviewed()) {
+            <form method="post" action="@document.reviewAction()">
+              <input type="hidden" name="csrfToken" value="@csrfToken">
+              <button type="submit" class="vr-mark" @if(document.id() != item.selectedDocumentId() || item.state() != "PENDING"){disabled}>Mark reviewed</button>
+            </form>
+          }
+        </div>
+      }
+      @if(item.role() == "LANDLORD") { <p class="vr-tip">Ownership proof must match the applicant and property.</p> }
+      @if(item.role() == "SUBLESSOR") { <p class="vr-tip">Check the full signed rental agreement.</p> }
+      @if(item.role() == "RENTER") { <p class="vr-tip">Identity evidence stays private.</p><p><a href="@routes.AdminController.applicationRemarks(item.userId())">Application remarks</a></p> }
+    </aside>
+  </section>
+
+  @if(item.state() == "PENDING") {
+    <form method="post" action="@routes.AdminController.decideVerification(item.role(), item.userId())" class="decision-form" id="verification-decision">
+      <input type="hidden" name="csrfToken" value="@csrfToken">
+      <input type="hidden" name="expectedUpdatedAt" value="@item.updatedAt()">
+      <label class="decision-reason">Decision reason · required for rejection
+        <textarea name="reason" maxlength="500" placeholder="Evidence is clear and consistent, or enter a specific re-upload reason." required></textarea>
+      </label>
+      <div class="split-actions">
+        <button class="primary" name="approve" value="true" type="submit">Approve role verification</button>
+        <button class="text-danger" name="approve" value="false" type="submit">Reject with reason</button>
+      </div>
+    </form>
+  } else {
+    <div class="notice neutral"><strong>Decision recorded</strong><br>@item.state() @if(item.rejectionReason() != "—") { · @item.rejectionReason() }</div>
+  }
+}

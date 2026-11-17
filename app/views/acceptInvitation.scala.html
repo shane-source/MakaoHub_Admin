@@ -1,0 +1,40 @@
+@(csrfToken: String, error: String)
+@main("Accept staff invitation") {
+  <main class="login-split">
+    <section class="login-art" aria-hidden="true">
+      <img src="@routes.Assets.versioned("images/staff-house.jpg")" alt="">
+      <div class="login-art-overlay"></div>
+      <div class="login-art-copy">
+        <span class="login-mark">&#9650;</span>
+        <p class="login-brand">Makao Hub</p>
+        <h2>Join the people keeping homes safe.</h2>
+      </div>
+    </section>
+    <section class="login-panel" aria-labelledby="page-title">
+      <div class="login-card">
+        <span class="login-mark small">&#9650;</span>
+        <h1 id="page-title">Welcome to the team</h1>
+        <p class="login-sub">Use the email and code from your invitation.</p>
+        @if(error != null && !error.isBlank) {
+          <div class="notice danger" role="alert">@error</div>
+        }
+        <form method="post" action="@routes.StaffAuthController.completeInvitation()" class="login-form">
+          <input type="hidden" name="csrfToken" value="@csrfToken">
+          <label>Email
+            <input name="email" type="email" maxlength="320" autocomplete="username" placeholder="name@@example.com" required autofocus>
+          </label>
+          <label>Invitation code
+            <input name="invitationCode" maxlength="100" autocomplete="one-time-code" required>
+          </label>
+          <label>Full name
+            <input name="fullName" maxlength="150" autocomplete="name" required>
+          </label>
+          <label>Password
+            <input name="password" type="password" minlength="8" maxlength="72" autocomplete="new-password" placeholder="At least 8 characters" required>
+          </label>
+          <button type="submit" class="login-button">Create account</button>
+        </form>
+      </div>
+    </section>
+  </main>
+}

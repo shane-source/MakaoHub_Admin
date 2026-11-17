@@ -1,0 +1,83 @@
+@(csrfToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, queue: models.StaffModels.ActionQueue, error: String, success: String)
+@staffLayout(queue.title(), queue.activeSection(), staff, fullName, csrfToken) {
+  @if(queue.activeSection() == "flags") {
+    <header class="fc-hero"><div><span class="fc-kicker">&#128737; Safety</span><h1>Flagged Chats</h1><p>Contact details are auto-masked. Review and decide.</p></div><div class="fc-count"><strong>@queue.items().size()</strong><span>on this page</span></div></header>
+  } else {
+    <header class="page-heading"><div><h1>@queue.title()</h1><p>@queue.subtitle()</p></div></header>
+  }
+  @if(success != null && !success.isBlank) { <div class="notice success" role="status">@success</div> }
+  @if(error != null && !error.isBlank) { <div class="notice danger" role="alert">@error</div> }
+
+  @if(queue.activeSection() == "flags") {
+    @if(queue.items().isEmpty) {
+      <div class="lm-empty"><div class="lm-empty-icon" aria-hidden="true">&#128737;</div><h2>All clear</h2><p>No flagged messages.</p></div>
+    }
+    <section class="fc-list">
+    @for(item <- queue.items()) {
+      <article class="fc-card">
+        <div class="fc-head">
+          <span class="fc-avatar" aria-hidden="true">@item.value("Participant").substring(0, 1).toUpperCase</span>
+          <div class="fc-who"><strong>@item.value("Participant")</strong><small>@item.value("Role pair") &middot; @item.value("Created")</small></div>
+          <span class="fc-reason">&#9873; @item.value("Flag reason")</span>
+        </div>
+        <blockquote class="fc-message">@item.value("Masked content")</blockquote>
+        <div class="fc-foot">
+          <span class="fc-auto">&#10003; Auto-masked</span>
+          @if(staff.role() == models.StaffModels.StaffRole.SAFETY_MODERATOR) {
+            <details class="fc-review"><summary>Review</summary><form method="post" action="@item.actionPath()" class="flag-review-form">
+              <input type="hidden" name="csrfToken" value="@csrfToken">
+              <label>Reason<textarea name="reason" maxlength="500" required placeholder="Safety reason, no private contact details."></textarea></label>
+              <div class="fc-actions">
+                <button class="primary" name="escalate" value="false">Warn user</button>
+                <button class="text-danger" name="escalate" value="true">Escalate</button>
+                <button class="clear-button" name="clear" value="true">Clear flag</button>
+              </div>
+            </form></details>
+          } else { <span class="fc-state">@item.value("Review state")</span> }
+        </div>
+      </article>
+    }
+    </section>
+  } else {
+  <section class="panel table-panel">
+    @if(queue.items().isEmpty) {
+      <div class="empty-state"><h2>No records in this view</h2><p>There is nothing waiting for this queue.</p></div>
+    } else {
+      <div class="table-scroll"><table>
+      @if(true) {
+        <thead><tr><th>Reported by</th><th>Subject</th><th>Concern</th><th>Priority</th><th>State</th></tr></thead>
+        <tbody>@for(item <- queue.items()) {<tr><td>@item.value("Report reference")</td><td>@item.value("Subject")</td><td>@item.value("Concern")</td><td><span class="flag-badge">@item.value("Priority")</span></td><td><span class="status-pill">@item.value("State")</span></td></tr>}</tbody>
+      }
+      </table></div>
+    }
+  </section>
+  }
+
+  @if(!queue.items().isEmpty) {
+    @defining(queue.items().get(0)) { selected =>
+      @if(queue.activeSection() != "flags") {
+        <section class="panel selected-report">
+          <h2>Selected report</h2>
+          <p>@selected.value("Private summary")</p>
+          @if(staff.role() == models.StaffModels.StaffRole.SAFETY_MODERATOR) {
+            <form method="post" action="@selected.actionPath()" class="decision-form">
+              <input type="hidden" name="csrfToken" value="@csrfToken">
+              <input type="hidden" name="priority" value="@selected.value("Priority")">
+              @if(selected.kind() == "LANDLORD_LISTING" || selected.kind() == "SHARED_LISTING") { <label class="check"><input type="checkbox" name="pauseListing" value="true"> Pause the reported listing</label> }
+              <label class="decision-reason">Resolution reason<textarea name="reason" maxlength="500" placeholder="Record the evidence-based outcome without private identity or contact data." required></textarea></label>
+              <label class="check permission-choice"><input type="checkbox" name="notifyUsers" value="true"> Notify affected users with a safe summary</label>
+              <div class="split-actions"><button class="primary" name="state" value="RESOLVED">Resolve selected report</button><button class="text-danger" name="state" value="ESCALATED">Escalate case</button></div>
+            </form>
+          }
+        </section>
+      }
+    }
+  }
+  <nav class="pagination" aria-label="Pagination">
+    @if(queue.total() >= 0) { <span class="count-note">@queue.total() flagged message@if(queue.total() != 1){s}</span> }
+    @if(queue.previousHref() != null) { <a class="secondary-button" href="@queue.previousHref()" aria-label="Previous page">‹</a> }
+    @for(link <- queue.links()) { <a class="page-number @if(link.current()){current}" href="@link.href()">@link.label()</a> }
+    @if(queue.links().isEmpty) { <span>Page @(queue.page() + 1)</span> }
+    @if(queue.hasNext() && queue.nextHref() != null) { <a class="secondary-button" href="@queue.nextHref()" aria-label="Next page">›</a> }
+  </nav>
+}

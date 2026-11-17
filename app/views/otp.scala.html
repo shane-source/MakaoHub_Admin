@@ -1,0 +1,31 @@
+@(csrfToken: String, maskedEmail: String, expiresAt: String, error: String)
+@main("Verify staff access") {
+  <main class="login-split">
+    <section class="login-art" aria-hidden="true">
+      <img src="@routes.Assets.versioned("images/staff-house.jpg")" alt="">
+      <div class="login-art-overlay"></div>
+      <div class="login-art-copy">
+        <span class="login-mark">&#9650;</span>
+        <p class="login-brand">Makao Hub</p>
+        <h2>One more step to stay safe.</h2>
+      </div>
+    </section>
+    <section class="login-panel" aria-labelledby="page-title">
+      <div class="login-card">
+        <span class="login-mark small">&#9650;</span>
+        <h1 id="page-title">Verify staff access</h1>
+        <p class="login-sub">Enter the 6-digit code sent to <strong>@maskedEmail</strong></p>
+        @if(error != null && !error.isBlank) {
+          <div class="notice danger" role="alert">@error</div>
+        }
+        <form method="post" action="@routes.StaffAuthController.completeSignIn()" class="login-form">
+          <input type="hidden" name="csrfToken" value="@csrfToken">
+          <label class="sr-only" for="code">Six-digit verification code</label>
+          <input id="code" class="otp-box" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" required autofocus>
+          <button type="submit" class="login-button">Verify</button>
+        </form>
+        <a class="login-forgot" href="@routes.StaffAuthController.signIn()">&larr; Back to sign in</a>
+      </div>
+    </section>
+  </main>
+}

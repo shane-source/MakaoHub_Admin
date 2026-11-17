@@ -1,0 +1,70 @@
+@(csrfToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, queue: models.StaffModels.VerificationQueue, error: String, success: String)
+@staffLayout("Verification queue", "verifications", staff, fullName, csrfToken) {
+  <header class="page-heading">
+    <div><h1>Identity Verification Queue</h1><p>Review submitted identity evidence for renters, landlords and sublessors.</p></div>
+  </header>
+  @if(success != null && !success.isBlank) { <div class="notice success" role="status">@success</div> }
+  @if(error != null && !error.isBlank) { <div class="notice danger" role="alert">@error</div> }
+
+  <section class="queue-summary" aria-label="Current verification page">
+    <article><span>REVIEW STATE</span><strong>@queue.stateFilter()</strong><small>Selected filter</small></article>
+    <article><span>CASES ON THIS PAGE</span><strong>@queue.rows().size()</strong><small>Current page</small></article>
+    <article><span>ROLE FILTER</span><strong>@if(queue.roleFilter() == null || queue.roleFilter().isBlank) { All roles } else { @queue.roleFilter() }</strong><small>Filter by applicant role</small></article>
+  </section>
+  <nav class="status-tabs" aria-label="Verification status">
+    <a class="@if(queue.stateFilter() == "PENDING"){active}" href="@routes.AdminController.verifications()?state=PENDING@if(queue.roleFilter() != null && !queue.roleFilter().isBlank){&amp;role=@queue.roleFilter()}@if(queue.search() != null && !queue.search().isBlank){&amp;search=@queue.search()}">Pending</a>
+    <a class="@if(queue.stateFilter() == "VERIFIED"){active}" href="@routes.AdminController.verifications()?state=VERIFIED@if(queue.roleFilter() != null && !queue.roleFilter().isBlank){&amp;role=@queue.roleFilter()}@if(queue.search() != null && !queue.search().isBlank){&amp;search=@queue.search()}">Approved</a>
+    <a class="@if(queue.stateFilter() == "REJECTED"){active}" href="@routes.AdminController.verifications()?state=REJECTED@if(queue.roleFilter() != null && !queue.roleFilter().isBlank){&amp;role=@queue.roleFilter()}@if(queue.search() != null && !queue.search().isBlank){&amp;search=@queue.search()}">Rejected</a>
+  </nav>
+  <form method="get" action="@routes.AdminController.verifications()" class="filter-bar">
+    <label>Role
+      <select name="role"><option value="">All roles</option><option value="RENTER" @if(queue.roleFilter() == "RENTER"){selected}>Renter</option><option value="LANDLORD" @if(queue.roleFilter() == "LANDLORD"){selected}>Landlord</option><option value="SUBLESSOR" @if(queue.roleFilter() == "SUBLESSOR"){selected}>Sublessor</option></select>
+    </label>
+    <label>Status
+      <select name="state"><option value="PENDING" @if(queue.stateFilter() == "PENDING"){selected}>Pending</option><option value="VERIFIED" @if(queue.stateFilter() == "VERIFIED"){selected}>Approved</option><option value="REJECTED" @if(queue.stateFilter() == "REJECTED"){selected}>Rejected</option></select>
+    </label>
+    <label>Search<input name="search" maxlength="150" value="@queue.search()" placeholder="Name"></label>
+    <button class="secondary-button">Apply filters</button>
+  </form>
+
+  <section class="panel table-panel queue-panel">
+    @if(queue.rows().isEmpty) {
+      <div class="empty-state"><h2>No verification cases</h2><p>No real account records match these filters and permissions.</p></div>
+    } else {
+      <div class="table-scroll"><table><thead><tr><th>Applicant / case</th><th>Role</th><th>Submitted</th><th>Evidence</th><th>State</th><th><span class="sr-only">Action</span></th></tr></thead><tbody>
+      @for(row <- queue.rows()) {
+        <tr>
+          <td data-label="Applicant / case"><strong>@row.applicant()</strong><br><span class="muted">@row.reference()</span></td>
+          <td data-label="Role">@row.role()</td>
+          <td data-label="Submitted">@row.submittedAt()</td>
+          <td data-label="Evidence">@row.evidence()</td>
+          <td data-label="State">@row.state()</td>
+          <td class="row-action">
+            @if(staff.role() == models.StaffModels.StaffRole.VERIFICATION_REVIEWER || staff.role() == models.StaffModels.StaffRole.STAFF_LEAD) { <a href="@row.reviewHref()">Open case</a> }
+            @if(staff.role() == models.StaffModels.StaffRole.STAFF_LEAD && row.state() == "PENDING") {
+              <details class="assign-disclosure"><summary>Assign reviewer</summary>
+                <form method="post" action="@row.assignAction()" class="assign-form">
+                  <input type="hidden" name="csrfToken" value="@csrfToken">
+                  <select name="reviewerId" aria-label="Verification reviewer" required><option value="">Choose reviewer</option>@for(reviewer <- queue.reviewers()) { <option value="@reviewer.userId()">@reviewer.name()</option> }</select>
+                  <input name="reason" maxlength="500" placeholder="Assignment reason" aria-label="Assignment reason" required>
+                  <button class="secondary-button">Confirm assignment</button>
+                </form>
+              </details>
+            }
+          </td>
+        </tr>
+      }
+      </tbody></table></div>
+    }
+  </section>
+
+  <div class="notice neutral"><strong>Restricted identity evidence</strong><br>Assigned verification reviewers and authorised Staff Leads may open a case. Every document view is recorded in the audit log.</div>
+  @if(!queue.rows().isEmpty && (staff.role() == models.StaffModels.StaffRole.VERIFICATION_REVIEWER || staff.role() == models.StaffModels.StaffRole.STAFF_LEAD)) {
+    <a class="primary wide-action" href="@queue.rows().get(0).reviewHref()">Open selected case</a>
+  }
+  <nav class="pagination" aria-label="Pagination">
+    @if(queue.previousHref() != null) { <a class="secondary-button" href="@queue.previousHref()">Previous</a> }
+    <span>Page @(queue.page() + 1)</span>
+    @if(queue.hasNext() && queue.nextHref() != null) { <a class="secondary-button" href="@queue.nextHref()">Next</a> }
+  </nav>
+}

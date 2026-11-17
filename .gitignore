@@ -1,0 +1,17 @@
+target/
+project/target/
+project/project/
+.bsp/
+.idea/
+.metals/
+.scala-build/
+*.iml
+*.log
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+

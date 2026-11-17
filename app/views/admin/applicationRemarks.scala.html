@@ -1,0 +1,8 @@
+@(csrfToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, userId: String, remarks: java.util.List[models.StaffModels.ApplicationRemark])
+@staffLayout("Application remarks", "verifications", staff, fullName, csrfToken) {
+  <header class="page-heading"><div><h1>Application remarks</h1><a href="@routes.AdminController.verification("RENTER", userId)">Back to renter verification</a></div></header>
+  <section class="panel">
+    @if(remarks.isEmpty) { <p>No remarks have been added.</p> }
+    @for(remark <- remarks) { <article><h2>@remark.listingTitle()</h2><p>@remark.remark()</p></article> }
+  </section>
+}

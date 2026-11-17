@@ -1,0 +1,61 @@
+@(csrfToken: String, releaseToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, data: models.StaffModels.PaymentPage, error: String, success: String)
+@staffLayout("Payments, holds and disputes", "payments", staff, fullName, csrfToken) {
+  <header class="pm-hero">
+    <div><span class="pm-kicker">&#128176; Paystack TEST</span><h1>Payments &amp; holds</h1><p>No real money moves.</p></div>
+    <div class="pm-stats"><div><strong>@data.bookings().size()</strong><span>bookings</span></div><div><strong>@data.payments().size()</strong><span>payments</span></div></div>
+  </header>
+  @if(error != null && !error.isBlank) { <div class="notice danger" role="alert">@error</div> }
+  @if(success != null && !success.isBlank) { <div class="notice success" role="status">@success</div> }
+
+  <h2 class="pm-title">Booking release</h2>
+  @if(data.bookings().isEmpty()) { <div class="lm-empty"><div class="lm-empty-icon" aria-hidden="true">&#128176;</div><h2>No bookings yet</h2><p>Nothing to review.</p></div> }
+  <section class="pm-list">
+    @for(row <- data.bookings()) {
+      <article class="pm-card">
+        <div class="pm-top">
+          <div class="pm-people"><span class="pm-name">@row.value("owner")</span><span class="pm-arrow" aria-hidden="true">&rarr;</span><span class="pm-name">@row.value("renter")</span></div>
+          <span class="pm-pill pm-@row.value("status").toLowerCase.replace("_", "-")">@row.value("status").replace("_", " ")</span>
+        </div>
+        <div class="pm-money"><strong>@row.value("amount")</strong><small>@row.value("payout")</small></div>
+        <div class="pm-facts">
+          <div><span>Owner move-in</span><b>@row.value("ownerMoveIn")</b></div>
+          <div><span>Renter answer</span><b>@if(row.value("accepted") == "true") { Yes } else { @if(row.value("accepted") == "false") { No } else { Waiting } }</b></div>
+          <div><span>Payout</span><b>@row.value("testPayout").replace("_", " ")</b></div>
+        </div>
+        <div class="pm-next">
+        @if(row.value("accepted") == "false") {
+          <strong>Staff review needed. Payment stays held.</strong>
+        } else if(row.value("accepted") != "true") {
+          <span>Waiting for the renter&rsquo;s answer.</span>
+        } else {
+          <span>Auto TEST payout after @row.value("eligible").</span>
+        }
+        @if(staff.role() == models.StaffModels.StaffRole.STAFF_LEAD && row.value("destination") != "true") {
+          <form method="post" action="@routes.AdminController.configureTestRecipient(row.value("ownerId"))">
+            <input type="hidden" name="csrfToken" value="@csrfToken">
+            <label>Recipient code for @row.value("owner")
+              <input name="recipientCode" required pattern="RCP_[a-zA-Z0-9]+" autocomplete="off" placeholder="RCP_…">
+            </label>
+            <label><input type="checkbox" name="ownerDestinationConfirmed" value="true" required> Belongs to this owner</label>
+            <button class="text-button" type="submit">Save destination</button>
+          </form>
+        } else {
+          <span>@if(row.value("destination") == "true") { &#10003; Payout destination set } else { Payout destination not set }</span>
+        }
+        </div>
+      </article>
+    }
+  </section>
+  <nav class="pagination" aria-label="Booking pages">
+    @if(data.page() > 0) { <a class="secondary-button" href="@{routes.AdminController.payments().url + "?page=" + (data.page() - 1)}">&lsaquo;</a> }
+    <span class="page-number current">@(data.page() + 1)</span>
+    @if(data.bookingNext()) { <a class="secondary-button" href="@{routes.AdminController.payments().url + "?page=" + (data.page() + 1)}">&rsaquo;</a> }
+  </nav>
+
+  <h2 class="pm-title">Payment records</h2>
+  <section class="pm-records">
+    <div class="table-scroll"><table><thead><tr><th>Renter</th><th>Amount</th><th>State</th><th>Type</th></tr></thead><tbody>
+      @for(row <- data.payments()) { <tr><td><strong>@row.value("reference")</strong></td><td class="pm-amount">@row.value("amount")</td><td><span class="pm-pill pm-@row.value("status").toLowerCase.replace("_", "-")">@row.value("status").replace("_", " ")</span></td><td><span class="pm-type">@row.value("type").replace("_", " ")</span></td></tr> }
+    </tbody></table></div>
+  </section>
+}

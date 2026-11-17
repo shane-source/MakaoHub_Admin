@@ -1,0 +1,20 @@
+@(csrfToken: String, staff: models.StaffModels.StaffIdentity, fullName: String, names: java.util.List[String], error: String, success: String)
+@staffLayout("Amenities", "amenities", staff, fullName, csrfToken) {
+  <header class="am-hero">
+    <div><span class="am-kicker">&#10022; Listing options</span><h1>Amenities</h1><p>What landlords and sublessors can offer.</p></div>
+    <div class="am-count"><strong>@names.size()</strong><span>available</span></div>
+  </header>
+  @if(!error.isBlank) { <div class="notice danger" role="alert">@error</div> }
+  @if(!success.isBlank) { <div class="notice success" role="status">@success</div> }
+  <form method="post" action="@routes.AdminController.createAmenity()" class="am-add">
+    <input type="hidden" name="csrfToken" value="@csrfToken">
+    <label class="sr-only" for="amenity-name">Amenity name</label>
+    <input id="amenity-name" name="name" maxlength="80" required placeholder="Add an amenity, e.g. Wi-Fi">
+    <button type="submit">+ Add</button>
+  </form>
+  @if(names.isEmpty) {
+    <div class="lm-empty"><div class="lm-empty-icon" aria-hidden="true">&#10022;</div><h2>No amenities yet</h2><p>Add the first one above.</p></div>
+  } else {
+    <ul class="am-grid">@for(name <- names) { <li class="am-chip"><span class="am-dot" aria-hidden="true">&#10003;</span>@name</li> }</ul>
+  }
+}

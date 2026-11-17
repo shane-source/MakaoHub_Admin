@@ -1,0 +1,37 @@
+@(csrfToken: String, error: String, success: String)
+@main("Sign in") {
+  <main class="login-split">
+    <section class="login-art" aria-hidden="true">
+      <img src="@routes.Assets.versioned("images/staff-house.jpg")" alt="">
+      <div class="login-art-overlay"></div>
+      <div class="login-art-copy">
+        <span class="login-mark">&#9650;</span>
+        <p class="login-brand">Makao Hub</p>
+        <h2>Safer homes start here.</h2>
+      </div>
+    </section>
+    <section class="login-panel" aria-labelledby="sign-in-title">
+      <div class="login-card">
+        <span class="login-mark small">&#9650;</span>
+        <h1 id="sign-in-title">Sign in to your workspace</h1>
+        @if(success != null && !success.isBlank) {
+          <div class="notice success" role="status">@success</div>
+        }
+        @if(error != null && !error.isBlank) {
+          <div class="notice danger" role="alert">@error</div>
+        }
+        <form method="post" action="@routes.StaffAuthController.startSignIn()" class="login-form">
+          <input type="hidden" name="csrfToken" value="@csrfToken">
+          <label>Email
+            <input name="email" type="email" maxlength="320" autocomplete="username" placeholder="name@@example.com" required autofocus>
+          </label>
+          <label>Password
+            <input name="password" type="password" maxlength="72" autocomplete="current-password" placeholder="Password" required>
+          </label>
+          <button type="submit" class="login-button">Sign in</button>
+        </form>
+        <a class="login-forgot" href="@routes.StaffAuthController.recover()">Forgot password?</a>
+      </div>
+    </section>
+  </main>
+}
