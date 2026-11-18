@@ -35,7 +35,9 @@ public final class StaffApiClient {
         this.ws = ws;
         this.baseUrl = stripTrailingSlash(config.getString("makao.api.baseUrl"));
         URI backend = URI.create(baseUrl);
-        if (backend.getHost() == null || !("https".equalsIgnoreCase(backend.getScheme()) || isLocal(backend))) {
+        boolean allowLan = config.hasPath("makao.api.allowPrivateHttp") && config.getBoolean("makao.api.allowPrivateHttp");
+        if (backend.getHost() == null
+                || !("https".equalsIgnoreCase(backend.getScheme()) || isLocal(backend) || (allowLan && isPrivateLan(backend)))) {
             throw new IllegalArgumentException("Makao API base URL must be HTTPS or a local development URL.");
         }
         this.timeout = config.getDuration("makao.api.requestTimeout");
@@ -211,6 +213,20 @@ public final class StaffApiClient {
         String result = value.strip();
         while (result.endsWith("/")) result = result.substring(0, result.length() - 1);
         return result;
+    }
+
+    /** Test setups only: plain http to a private network IPv4 address (10.x, 172.16-31.x, 192.168.x), never a hostname. */
+    private static boolean isPrivateLan(URI uri) {
+        if (!"http".equalsIgnoreCase(uri.getScheme())) return false;
+        String host = uri.getHost();
+        if (host == null || !host.matches("\\d{1,3}(\\.\\d{1,3}){3}")) return false;
+        String[] p = host.split("\\.");
+        int a = Integer.parseInt(p[0]);
+        int b = Integer.parseInt(p[1]);
+        for (String part : p) {
+            if (Integer.parseInt(part) > 255) return false;
+        }
+        return a == 10 || (a == 172 && b >= 16 && b <= 31) || (a == 192 && b == 168);
     }
 
     private static boolean isLocal(URI uri) {
