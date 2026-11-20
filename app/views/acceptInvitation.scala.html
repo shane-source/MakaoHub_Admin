@@ -14,7 +14,7 @@
       <div class="login-card">
         <span class="login-mark small">&#9650;</span>
         <h1 id="page-title">Welcome to the team</h1>
-        <p class="login-sub">Use the email and code from your invitation.</p>
+        <p class="login-sub">Enter the email address your invitation was sent to and the 43-character code from that email, then choose your name and password.</p>
         @if(error != null && !error.isBlank) {
           <div class="notice danger" role="alert">@error</div>
         }
@@ -24,7 +24,7 @@
             <input name="email" type="email" maxlength="320" autocomplete="username" placeholder="name@@example.com" required autofocus>
           </label>
           <label>Invitation code
-            <input name="invitationCode" maxlength="100" autocomplete="one-time-code" required>
+            <input name="invitationCode" minlength="43" maxlength="43" pattern="[A-Za-z0-9_\-]{43}" title="The 43-character code from your invitation email" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste the code from your email" required>
           </label>
           <label>Full name
             <input name="fullName" maxlength="150" autocomplete="name" required>
@@ -34,6 +34,7 @@
           </label>
           <button type="submit" class="login-button">Create account</button>
         </form>
+        <a class="login-forgot" href="@routes.StaffAuthController.signIn()">Already have an account? Sign in</a>
       </div>
     </section>
   </main>
